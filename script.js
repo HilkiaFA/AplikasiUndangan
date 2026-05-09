@@ -1,8 +1,10 @@
-let guests = JSON.parse(localStorage.getItem('guests')) || [];
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8763CetWtbFryY9ecS2WOVlg0g2_JLdkf90g74V0j5hD-ajBJQB2jq0UoI7Jveu0E/exec";
+
+let guests = [];
 let html5QrcodeScanner = null;
 
 document.addEventListener("DOMContentLoaded", () => {
-    renderTable();
+    fetchData();
 });
 
 function switchTab(tabId) {
@@ -15,43 +17,25 @@ function switchTab(tabId) {
         html5QrcodeScanner.clear();
         html5QrcodeScanner = null;
     }
+    
+    if (tabId === 'setup') {
+        fetchData();
+    }
 }
 
-function processCSV() {
-    const fileInput = document.getElementById('csvFileInput');
-    if (!fileInput.files[0]) {
-        showMessage('setup-status', 'Pilih file CSV terlebih dahulu!', 'error');
-        return;
-    }
-
-    Papa.parse(fileInput.files[0], {
-        header: true,
-        skipEmptyLines: true,
-        transformHeader: function(header) {
-            return header.trim().toLowerCase();
-        },
-        complete: function(results) {
-            console.log("Data mentah dari CSV:", results.data);
-
-            const validData = results.data.filter(row => row.id && row.id.trim() !== "");
-
-            if (validData.length === 0) {
-                showMessage('setup-status', 'Data kosong! Pastikan ada kolom "id", "nama", dan "kategori".', 'error');
-                return;
-            }
-
-            guests = validData.map(row => ({
-                id: (row.id || '').trim(),
-                nama: (row.nama || '').trim(),
-                kategori: (row.kategori || '').trim(),
-                hadir: false
-            }));
-            
-            saveData();
+function fetchData() {
+    document.querySelector('#guestTable tbody').innerHTML = '<tr><td colspan="4">Memuat data dari Google Sheets...</td></tr>';
+    
+    fetch(SCRIPT_URL)
+        .then(response => response.json())
+        .then(data => {
+            guests = data;
             renderTable();
-            showMessage('setup-status', `Berhasil! ${guests.length} data tamu ditambahkan.`, 'success');
-        }
-    });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.querySelector('#guestTable tbody').innerHTML = '<tr><td colspan="4" style="color:red;">Gagal memuat data. Periksa koneksi internet.</td></tr>';
+        });
 }
 
 function renderTable() {
@@ -69,20 +53,7 @@ function renderTable() {
     });
 }
 
-function saveData() {
-    localStorage.setItem('guests', JSON.stringify(guests));
-}
-
-function clearData() {
-    if(confirm("Yakin ingin menghapus semua data tamu?")) {
-        guests = [];
-        saveData();
-        renderTable();
-    }
-}
-
 let qrcode = null;
-
 function findGuest() {
     const query = document.getElementById('guestSearch').value.trim().toLowerCase();
     const guest = guests.find(g => g.id.toLowerCase() === query || g.nama.toLowerCase().includes(query));
@@ -121,18 +92,17 @@ function startScanner() {
 }
 
 let lastScan = "";
+let isProcessing = false;
 
 function onScanSuccess(decodedText, decodedResult) {
-    if (decodedText !== lastScan) {
+    if (decodedText !== lastScan && !isProcessing) {
         lastScan = decodedText;
         processCheckIn(decodedText);
-        
         setTimeout(() => { lastScan = ""; }, 3000); 
     }
 }
 
-function onScanFailure(error) {
-}
+function onScanFailure(error) {}
 
 function manualCheckIn() {
     const query = document.getElementById('manualInput').value;
@@ -140,27 +110,29 @@ function manualCheckIn() {
 }
 
 function processCheckIn(query) {
-    if (!query) return; 
+    if (!query || isProcessing) return; 
 
     const queryClean = String(query).trim().toLowerCase();
-    
-    const guestIndex = guests.findIndex(g => 
-        String(g.id).trim().toLowerCase() === queryClean || 
-        String(g.nama).trim().toLowerCase() === queryClean
-    );
-    
-    if (guestIndex !== -1) {
-        if (guests[guestIndex].hadir) {
-            showMessage('scan-result', `⚠️ Tamu atas nama ${guests[guestIndex].nama} SUDAH check-in sebelumnya!`, 'error');
-        } else {
-            guests[guestIndex].hadir = true;
-            saveData();
-            renderTable();
-            showMessage('scan-result', `✅ Berhasil! Selamat datang, ${guests[guestIndex].nama} (${guests[guestIndex].kategori})`, 'success');
-        }
-    } else {
-        showMessage('scan-result', `❌ Tidak terdaftar! Scanner membaca: "${query}"`, 'error');
-    }
+    isProcessing = true;
+    showMessage('scan-result', 'Menyinkronkan dengan server...', 'success');
+
+    fetch(`${SCRIPT_URL}?action=update&id=${encodeURIComponent(queryClean)}`)
+        .then(response => response.json())
+        .then(data => {
+            isProcessing = false;
+            if (data.status === "success") {
+                showMessage('scan-result', `✅ Berhasil! Selamat datang, ${data.nama}`, 'success');
+                fetchData(); 
+            } else if (data.status === "already_checked_in") {
+                showMessage('scan-result', `⚠️ Tamu atas nama ${data.nama} SUDAH check-in sebelumnya!`, 'error');
+            } else {
+                showMessage('scan-result', `❌ Tidak terdaftar! Scanner membaca: "${query}"`, 'error');
+            }
+        })
+        .catch(error => {
+            isProcessing = false;
+            showMessage('scan-result', '❌ Gagal terhubung ke server!', 'error');
+        });
     
     document.getElementById('manualInput').value = '';
 }
@@ -169,5 +141,7 @@ function showMessage(elementId, msg, type) {
     const el = document.getElementById(elementId);
     el.innerText = msg;
     el.className = `status-msg ${type}`;
-    setTimeout(() => el.innerText = '', 5000); 
+    if (msg !== 'Menyinkronkan dengan server...') {
+        setTimeout(() => el.innerText = '', 5000); 
+    }
 }
