@@ -104,9 +104,35 @@ function onScanSuccess(decodedText, decodedResult) {
 
 function onScanFailure(error) {}
 
+// ================= PERUBAHAN FUNGSI MANUAL CHECK-IN =================
 function manualCheckIn() {
-    const query = document.getElementById('manualInput').value;
-    processCheckIn(query);
+    const query = document.getElementById('manualInput').value.trim().toLowerCase();
+    
+    if (!query) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Kolom Kosong',
+            text: 'Silakan ketik nama atau ID tamu terlebih dahulu!',
+            confirmButtonColor: '#f59e0b'
+        });
+        return;
+    }
+
+    const guest = guests.find(g => 
+        g.id.toLowerCase() === query || 
+        g.nama.toLowerCase().includes(query) 
+    );
+
+    if (guest) {
+        processCheckIn(guest.id);
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'TIDAK DITEMUKAN',
+            text: `Tidak ada tamu dengan nama atau ID "${document.getElementById('manualInput').value}"`,
+            confirmButtonColor: '#ef4444'
+        });
+    }
 }
 function processCheckIn(query) {
     if (!query || isProcessing) return; 
