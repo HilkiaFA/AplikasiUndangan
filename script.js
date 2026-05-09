@@ -108,40 +108,64 @@ function manualCheckIn() {
     const query = document.getElementById('manualInput').value;
     processCheckIn(query);
 }
-
 function processCheckIn(query) {
     if (!query || isProcessing) return; 
 
     const queryClean = String(query).trim().toLowerCase();
     isProcessing = true;
-    showMessage('scan-result', 'Menyinkronkan dengan server...', 'success');
+
+    Swal.fire({
+        title: 'Memeriksa Tiket...',
+        text: 'Mohon tunggu sebentar',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
 
     fetch(`${SCRIPT_URL}?action=update&id=${encodeURIComponent(queryClean)}`)
         .then(response => response.json())
         .then(data => {
             isProcessing = false;
+            
             if (data.status === "success") {
-                showMessage('scan-result', `✅ Berhasil! Selamat datang, ${data.nama}`, 'success');
-                fetchData(); 
+                Swal.fire({
+                    icon: 'success',
+                    title: 'BERHASIL!',
+                    html: `Selamat datang,<br><b style="font-size: 20px;">${data.nama}</b><br>Kategori: ${data.kategori}`,
+                    confirmButtonColor: '#10b981'
+                });
+                fetchData();
+                
             } else if (data.status === "already_checked_in") {
-                showMessage('scan-result', `⚠️ Tamu atas nama ${data.nama} SUDAH check-in sebelumnya!`, 'error');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'SUDAH HADIR',
+                    html: `Tamu atas nama <b>${data.nama}</b> sudah melakukan scan sebelumnya!`,
+                    confirmButtonColor: '#f59e0b'
+                });
+                
             } else {
-                showMessage('scan-result', `❌ Tidak terdaftar! Scanner membaca: "${query}"`, 'error');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'TIDAK VALID',
+                    text: 'Barcode ini tidak terdaftar dalam buku tamu.',
+                    confirmButtonColor: '#ef4444'
+                });
             }
         })
         .catch(error => {
             isProcessing = false;
-            showMessage('scan-result', '❌ Gagal terhubung ke server!', 'error');
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Terhubung',
+                text: 'Pastikan HP Anda terhubung ke internet.',
+                confirmButtonColor: '#ef4444'
+            });
         });
     
     document.getElementById('manualInput').value = '';
 }
 
 function showMessage(elementId, msg, type) {
-    const el = document.getElementById(elementId);
-    el.innerText = msg;
-    el.className = `status-msg ${type}`;
-    if (msg !== 'Menyinkronkan dengan server...') {
-        setTimeout(() => el.innerText = '', 5000); 
-    }
 }

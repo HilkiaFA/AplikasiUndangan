@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>E-Ticket & Kehadiran</title>
 
-    <!-- Font Modern & Ikon -->
     <link
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
       rel="stylesheet"
@@ -15,16 +14,14 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
 
-    <!-- File CSS -->
     <link rel="stylesheet" href="style.css" />
 
-    <!-- Library Eksternal -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   </head>
   <body>
     <div class="app-container">
-      <!-- Navigasi Menu -->
       <nav class="bottom-nav">
         <button
           onclick="switchTab('guest')"
@@ -42,7 +39,6 @@
       </nav>
 
       <div class="content-area">
-        <!-- ================= TAB 1: PORTAL TAMU ================= -->
         <section id="guest" class="tab-content active">
           <div class="header-title">
             <h2>Cari Undangan</h2>
@@ -59,7 +55,6 @@
             <button onclick="findGuest()">Cari</button>
           </div>
 
-          <!-- Desain Tiket Digital -->
           <div id="guest-result" class="ticket hidden">
             <div class="ticket-header">
               <h3><i class="fas fa-star"></i> INVITATION PASS</h3>
@@ -79,7 +74,6 @@
           </div>
         </section>
 
-        <!-- ================= TAB 2: SCANNER ================= -->
         <section id="scanner" class="tab-content">
           <div class="header-title">
             <h2>Scan Tiket</h2>
@@ -106,7 +100,6 @@
           </div>
         </section>
 
-        <!-- ================= TAB 3: DATA (ADMIN) ================= -->
         <section id="setup" class="tab-content">
           <div class="header-title">
             <h2>Daftar Kehadiran</h2>
