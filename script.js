@@ -84,7 +84,7 @@ function clearData() {
 let qrcode = null;
 
 function findGuest() {
-    const query = document.getElementById('guestSearch').value.toLowerCase();
+    const query = document.getElementById('guestSearch').value.trim().toLowerCase();
     const guest = guests.find(g => g.id.toLowerCase() === query || g.nama.toLowerCase().includes(query));
     
     const resultDiv = document.getElementById('guest-result');
@@ -99,7 +99,7 @@ function findGuest() {
         qrContainer.innerHTML = ''; 
         if (guest.kategori.toLowerCase() === 'digital') {
             qrcode = new QRCode(qrContainer, {
-                text: guest.id, 
+                text: String(guest.id).trim(), 
                 width: 150,
                 height: 150
             });
@@ -120,8 +120,15 @@ function startScanner() {
     }
 }
 
+let lastScan = "";
+
 function onScanSuccess(decodedText, decodedResult) {
-    processCheckIn(decodedText);
+    if (decodedText !== lastScan) {
+        lastScan = decodedText;
+        processCheckIn(decodedText);
+        
+        setTimeout(() => { lastScan = ""; }, 3000); 
+    }
 }
 
 function onScanFailure(error) {
@@ -133,8 +140,14 @@ function manualCheckIn() {
 }
 
 function processCheckIn(query) {
-    const queryLower = query.toLowerCase();
-    const guestIndex = guests.findIndex(g => g.id.toLowerCase() === queryLower || g.nama.toLowerCase() === queryLower);
+    if (!query) return; 
+
+    const queryClean = String(query).trim().toLowerCase();
+    
+    const guestIndex = guests.findIndex(g => 
+        String(g.id).trim().toLowerCase() === queryClean || 
+        String(g.nama).trim().toLowerCase() === queryClean
+    );
     
     if (guestIndex !== -1) {
         if (guests[guestIndex].hadir) {
@@ -146,7 +159,7 @@ function processCheckIn(query) {
             showMessage('scan-result', `✅ Berhasil! Selamat datang, ${guests[guestIndex].nama} (${guests[guestIndex].kategori})`, 'success');
         }
     } else {
-        showMessage('scan-result', '❌ Data tamu tidak valid atau tidak terdaftar!', 'error');
+        showMessage('scan-result', `❌ Tidak terdaftar! Scanner membaca: "${query}"`, 'error');
     }
     
     document.getElementById('manualInput').value = '';
