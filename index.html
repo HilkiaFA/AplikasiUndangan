@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Buku Tamu Undangan</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Sistem Kehadiran Undangan</h1>
+        <nav>
+          <button onclick="switchTab('setup')">⚙️ Setup Data (Admin)</button>
+          <button onclick="switchTab('guest')">🎟️ Portal Tamu</button>
+          <button onclick="switchTab('scanner')">📷 Scanner & Buku Tamu</button>
+        </nav>
+      </header>
+
+      <section id="setup" class="tab-content active">
+        <h2>Upload Data Tamu (CSV)</h2>
+        <p>
+          Format CSV harus memiliki header: <b>id, nama, kategori</b> (kategori
+          berisi 'Digital' atau 'Fisik').
+        </p>
+        <input type="file" id="csvFileInput" accept=".csv" />
+        <button onclick="processCSV()">Upload & Simpan Data</button>
+        <div id="setup-status" class="status-msg"></div>
+
+        <h3>Daftar Tamu Saat Ini:</h3>
+        <div class="table-container">
+          <table id="guestTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nama</th>
+                <th>Kategori</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <button
+          onclick="clearData()"
+          style="background-color: #ff4757; margin-top: 15px"
+        >
+          Hapus Semua Data
+        </button>
+      </section>
+
+      <section id="guest" class="tab-content">
+        <h2>Ambil Tiket Undangan Anda</h2>
+        <div class="form-group">
+          <input
+            type="text"
+            id="guestSearch"
+            placeholder="Masukkan ID atau Nama Anda..."
+          />
+          <button onclick="findGuest()">Cari Undangan</button>
+        </div>
+        <div id="guest-result" class="card hidden">
+          <h3 id="guest-name-display"></h3>
+          <p>Kategori: <span id="guest-category-display"></span></p>
+          <div id="qrcode-container"></div>
+          <p id="guest-instruction"></p>
+        </div>
+      </section>
+
+      <section id="scanner" class="tab-content">
+        <h2>Buku Tamu & Scanner Pintu Masuk</h2>
+        <div class="scanner-container">
+          <div id="reader" width="600px"></div>
+        </div>
+        <div id="scan-result" class="status-msg"></div>
+
+        <hr />
+        <h3>Input Manual (Untuk Undangan Fisik)</h3>
+        <div class="form-group">
+          <input
+            type="text"
+            id="manualInput"
+            placeholder="Masukkan Nama atau ID Tamu..."
+          />
+          <button onclick="manualCheckIn()">Hadirkan Tamu</button>
+        </div>
+      </section>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
